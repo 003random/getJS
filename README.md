@@ -50,7 +50,7 @@ To save the js files, you can use:
 $ getJS -url=https://poc-server.com -plain | xargs wget
 ```
   
-If you would like the output to be in JSON format, you can combine it with [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
+If you would like the output to be in JSON format, you can combine it with [@Tomnomnom's](https://github.com/tomnomnom) [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
 ```bash
 $ getJS -url=https://poc-server.com -plain | tojson
 ```  
