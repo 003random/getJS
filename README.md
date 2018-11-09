@@ -1,6 +1,6 @@
-![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)  
-  
 # getJS
+[![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/003random/getJS/issues)
 
 getJS is a tool to extract all the javascript files from a set of given urls.  
 
