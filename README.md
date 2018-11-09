@@ -34,5 +34,5 @@ This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-* @jimen0 for helping getting me started with GO
+* [@jimen0](https://github.com/jimen0) for helping getting me started with GO
 
