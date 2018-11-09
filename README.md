@@ -77,6 +77,8 @@ If you want to only show the existing js files, use:
 $ getJS -url=domains.txt -complete -resolve
 ```  
 
+![screenshot](https://poc-server.com/getJS/screenshot.png)
+
 ## Built With
 
 * [GO](http://golang.org/) - GOlanguage
