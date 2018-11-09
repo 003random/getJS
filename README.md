@@ -41,6 +41,10 @@ getJS -h
 | -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
 
 ## Examples  
+  
+ ![screenshot](https://poc-server.com/getJS/screenshot.png)
+
+    
 getJS supports stdin data. To pipe urls to getJS, use the following (-plain is optional).  
 
 ```bash
@@ -76,8 +80,6 @@ If you want to only show the existing js files, use:
 ```bash
 $ getJS -url=domains.txt -complete -resolve
 ```  
-
-![screenshot](https://poc-server.com/getJS/screenshot.png)
 
 ## Built With
 
