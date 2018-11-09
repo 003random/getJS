@@ -36,11 +36,46 @@ getJS -h
 | -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
 
 ## Examples  
-getJS supports stdin data. To pip urls to getJS, use the following (-plain is optional).  
+getJS supports stdin data. To pipe urls to getJS, use the following (-plain is optional).  
 
-```
+```bash
 cat domains.txt | getJS -plain
+```  
+  
+If you want to save all the js files locally, you can use:  
+```bash
+getJS -url=https://poc-server.com -plain | xargs wget
 ```
+  
+If you would like the output to be in JSON format, you can combine it with [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
+``bash
+getJS -url=https://poc-server.com -plain | tojson
+```  
+  
+To feed urls from a file use:  
+```bash
+getJS -input=domains.txt
+```  
+  
+To only feed 1 url and only show the results, use:  
+```bash
+getJS -url=https://poc-server.com -plain
+```  
+  
+If you want to save the results to a file, and don't display anything, use:  
+```bash
+getJS -url=https://poc-server.com -output=results.txt
+```  
+  
+If you want to have a list of full urls as output use:  
+```bash
+getJS -url=domains.txt -complete
+```  
+  
+If you want to only show the existing js files, use:  
+```bash
+getJS -url=domains.txt -complete -resolve
+```  
 
 ## Built With
 
