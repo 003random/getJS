@@ -18,8 +18,11 @@ getJS is written in GO. You can install it with `go get`:
 go get github.com/003random/getJS
 ```
 
-# Usage
-
+# Usage  
+Note: When you supply urls from different sources, e.g. with stdin and an input file, it will add all the urls together :)  
+Example: `echo "https://github.com" | getJS -url=https://example.com -input=domains.txt`  
+  
+To get all  options, do:  
 ```bash
 getJS -h
 ```
@@ -39,42 +42,37 @@ getJS -h
 getJS supports stdin data. To pipe urls to getJS, use the following (-plain is optional).  
 
 ```bash
-cat domains.txt | getJS -plain
+$ cat domains.txt | getJS -plain
 ```  
   
-If you want to save all the js files locally, you can use:  
+To save the js files, you can use:  
 ```bash
-getJS -url=https://poc-server.com -plain | xargs wget
+$ getJS -url=https://poc-server.com -plain | xargs wget
 ```
   
 If you would like the output to be in JSON format, you can combine it with [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
-``bash
-getJS -url=https://poc-server.com -plain | tojson
+```bash
+$ getJS -url=https://poc-server.com -plain | tojson
 ```  
   
 To feed urls from a file use:  
 ```bash
-getJS -input=domains.txt
+$ getJS -input=domains.txt
 ```  
   
-To only feed 1 url and only show the results, use:  
+To save the results to a file, and don't display anything, use:  
 ```bash
-getJS -url=https://poc-server.com -plain
-```  
-  
-If you want to save the results to a file, and don't display anything, use:  
-```bash
-getJS -url=https://poc-server.com -output=results.txt
+$ getJS -url=https://poc-server.com -output=results.txt
 ```  
   
 If you want to have a list of full urls as output use:  
 ```bash
-getJS -url=domains.txt -complete
+$ getJS -url=domains.txt -complete
 ```  
   
 If you want to only show the existing js files, use:  
 ```bash
-getJS -url=domains.txt -complete -resolve
+$ getJS -url=domains.txt -complete -resolve
 ```  
 
 ## Built With
