@@ -89,7 +89,7 @@ $ getJS -url=domains.txt -complete -resolve
 
 ## Contributing
 
-You are free to submit any issues of pull requests :)
+You are free to submit any issues and/or pull requests :)
 
 ## License
 
