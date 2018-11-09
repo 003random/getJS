@@ -18,6 +18,24 @@ getJS is written in GO. You can install it with `go get`:
 go get github.com/003random/getJS
 ```
 
+# Usage
+
+```bash
+getJS -h
+```
+This will display help for the tool. Here are all the switches it supports.
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| -url   | The url to get the javascript sources from | getJS -url=https://poc-server.com |
+| -input   | Input file with urls            | getJS -input=domains.txt |
+| -output   | The file where to save the output to        | getJS -output=output.txt |
+| -plain  | Only output the results | getJS -plain |
+| -silent  | Output nothing           | getJS -silent |
+| -complete  | Complete the urls. e.g. /js/index.js -> https://example.com/js/index.js  | getJS -complete |
+| -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
+
+
 ## Built With
 
 * [GO](http://golang.org/) - GOlanguage
