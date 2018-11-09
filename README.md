@@ -23,7 +23,7 @@ go get github.com/003random/getJS
 ```bash
 getJS -h
 ```
-This will display help for the tool. Here are all the switches it supports.
+  
 
 | Flag | Description | Example |
 |------|-------------|---------|
@@ -35,6 +35,12 @@ This will display help for the tool. Here are all the switches it supports.
 | -complete  | Complete the urls. e.g. /js/index.js -> https://example.com/js/index.js  | getJS -complete |
 | -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
 
+## Examples  
+getJS supports stdin data. To pip urls to getJS, use the following (-plain is optional).  
+
+```
+cat domains.txt | getJS -plain
+```
 
 ## Built With
 
