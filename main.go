@@ -161,7 +161,7 @@ func getScriptSrc(url string) ([]string, error) {
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		// ToDo: Change to no panic. only print warning in stderr
-		fmt.Fprintln(os.Stderr, "%s didnt resolve/return a 200. StatusCode: %d", res.StatusCode)
+		fmt.Fprintln(os.Stderr, url, "didnt resolve/return a 200. StatusCode:", res.StatusCode)
 		return nil, err
 	}
 
