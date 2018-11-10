@@ -4,9 +4,7 @@
 
 getJS is a tool to extract all the javascript files from a set of given urls.  
 
-The urls can also be piped to getJS, or you can specify a singel url with the -url argument. getJS offers a range of options, 
-
-varying from completing the urls, to resolving the files.
+The urls can be piped to getJS, or you can specify a single url with the `-url` argument. getJS offers a range of options, varying from completing the urls, to resolving the urls to make sure they exist.
 
 ## Prerequisites
 
@@ -16,14 +14,18 @@ Make sure you have [GO](https://golang.org/) installed on your system.
 
 getJS is written in GO. You can install it with `go get`:
 
-```
+```bash
 go get github.com/003random/getJS
 ```
 
 # Usage  
 Note: When you supply urls from different sources, e.g. with stdin and an input file, it will add all the urls together :)  
-Example: `echo "https://github.com" | getJS -url=https://example.com -input=domains.txt`  
-  
+Example: 
+
+```bash
+echo "https://github.com" | getJS -url=https://example.com -input=domains.txt
+```
+
 To get all  options, do:  
 ```bash
 getJS -h
@@ -76,14 +78,14 @@ If you want to have a list of full urls as output use:
 $ getJS -url=domains.txt -complete
 ```  
   
-If you want to only show the existing js files, use:  
+If you want to only show the js files that resolve, use:  
 ```bash
 $ getJS -url=domains.txt -complete -resolve
 ```  
 
 ## Built With
 
-* [GO](http://golang.org/) - GOlanguage
+* [GO](http://golang.org/) - Golang
 * [Goquery](https://github.com/PuerkitoBio/goquery) - HTML parser with syntaxes like jquery, in GO
 
 
