@@ -82,7 +82,11 @@ func main() {
 		if !*plain && !*silent {
 			fmt.Println("[+] Getting sources from", e)
 		}
-		sources := getScriptSrc(e)
+		sources, err := getScriptSrc(e)
+		// ToDo: Just skip it. Dont panic. Trow a error in stderr
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		if *complete {
 			// ToDo: send copy of sources to completeUrls, and if there was an error. keep the old sources and display the error to stderr
@@ -157,7 +161,8 @@ func getScriptSrc(url string) ([]string, error) {
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		// ToDo: Change to no panic. only print warning in stderr
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		fmt.Fprintln(os.Stderr, "%s didnt resolve/return a 200. StatusCode: %d", res.StatusCode)
+		return nil, err
 	}
 
 	// Load the HTML document
@@ -176,7 +181,7 @@ func getScriptSrc(url string) ([]string, error) {
 		}
 	})
 
-	return sources
+	return sources, nil
 }
 
 // ToDo: Use io.Writer instead of a file path
@@ -205,7 +210,7 @@ func resolveUrls(s []string) ([]string, error) {
 			s = append(s[:i], s[i+1:]...)
 		}
 	}
-	return s
+	return s, nil
 }
 
 func completeUrls(s []string, mainUrl string) ([]string, error) {
@@ -223,5 +228,5 @@ func completeUrls(s []string, mainUrl string) ([]string, error) {
 			s[i] = u.Scheme + "://" + u.Host + u.Path + "/" + s[i]
 		}
 	}
-	return s
+	return s, nil
 }
