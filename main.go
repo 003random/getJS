@@ -85,7 +85,8 @@ func main() {
 		sources, err := getScriptSrc(e)
 		// ToDo: Just skip it. Dont panic. Trow a error in stderr
 		if err != nil {
-			log.Fatal(err)
+			fmt.Fprintln(os.Stderr, "[!] Couldn't get sources from", e)
+			fmt.Fprintln(os.Stderr, "[!] Error:", err)
 		}
 
 		if *complete {
@@ -160,9 +161,9 @@ func getScriptSrc(url string) ([]string, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		// ToDo: Change to no panic. only print warning in stderr
-		fmt.Fprintln(os.Stderr, url, "didnt resolve/return a 200. StatusCode:", res.StatusCode)
-		return nil, err
+		fmt.Fprintln(os.Stderr, "[!] Couldn't get sources from", url)
+		fmt.Fprintln(os.Stderr, "[!] Error: StatusCode:", res.StatusCode, "was returned instead of a 200 OK")
+		return nil, nil
 	}
 
 	// Load the HTML document
