@@ -39,6 +39,7 @@ getJS -h
 | -silent  | Output nothing           | getJS -silent |
 | -complete  | Complete the urls. e.g. /js/index.js -> htt<span></span>ps://example.<span></span>com/js/index.js  | getJS -complete |
 | -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
+| -nocolors   | Don't color the output   | getJS -nocolors |
 
 ## Examples  
   
