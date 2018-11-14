@@ -42,7 +42,7 @@ getJS -h
 
 ## Examples  
   
- ![screenshot](https://poc-server.com/getJS/screenshot.png)
+ ![screenshot](https://poc-server.com/getJS/screenshot_.png)
 
     
 getJS supports stdin data. To pipe urls to getJS, use the following:  
