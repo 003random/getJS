@@ -35,8 +35,7 @@ getJS -h
 | -url   | The url to get the javascript sources from | getJS -url=htt<span></span>ps://poc-server.com |
 | -input   | Input file with urls            | getJS -input=domains.txt |
 | -output   | The file where to save the output to        | getJS -output=output.txt |
-| -plain  | Only output the results | getJS -plain |
-| -silent  | Output nothing           | getJS -silent |
+| -verbose  | Display info of what is going on           | getJS -verbose |
 | -complete  | Complete the urls. e.g. /js/index.js -> htt<span></span>ps://example.<span></span>com/js/index.js  | getJS -complete |
 | -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
 | -nocolors   | Don't color the output   | getJS -nocolors |
@@ -46,20 +45,20 @@ getJS -h
  ![screenshot](https://poc-server.com/getJS/screenshot.png)
 
     
-getJS supports stdin data. To pipe urls to getJS, use the following (-plain is optional).  
+getJS supports stdin data. To pipe urls to getJS, use the following:  
 
 ```bash
-$ cat domains.txt | getJS -plain
+$ cat domains.txt | getJS
 ```  
   
 To save the js files, you can use:  
 ```bash
-$ getJS -url=https://poc-server.com -plain | xargs wget
+$ getJS -url=https://poc-server.com | xargs wget
 ```
   
 If you would like the output to be in JSON format, you can combine it with [@Tomnomnom's](https://github.com/tomnomnom) [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
 ```bash
-$ getJS -url=https://poc-server.com -plain | tojson
+$ getJS -url=https://poc-server.com | tojson
 ```  
   
 To feed urls from a file use:  
