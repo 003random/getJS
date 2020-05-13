@@ -150,25 +150,21 @@ func main() {
 			output.Error("[!] Resolve can only be used in combination with -complete", nil)
 		}
 
-		for _, i := range sources {
-			fmt.Println(i)
-		}
-
-		if *outputFileArg != "" {
-			allSources = append(allSources, sources...)
-		}
-
+		allSources = append(allSources, sources...)
 	}
 
-	// Save to file
+	// Save to file or print
 	if *outputFileArg != "" {
 		output.Log("[+] Saving output to " + *outputFileArg)
 		err := saveToFile(allSources, *outputFileArg)
 		if err != nil {
 			output.Error("[!] Couldn't save to output file "+*outputFileArg, err)
 		}
+	} else {
+		for _, i := range allSources {
+			fmt.Println(i)
+		}
 	}
-
 }
 
 // ToDO: Use channel instead of slide, and use io.Writer instead of file path
