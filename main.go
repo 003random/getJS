@@ -173,13 +173,7 @@ func complete(sources []string, url string) (bool, []string) {
 
 func resolve(sources []string) []string {
 	output.Log("[+] Resolving files")
-	sourcesBak := sources
-	sources, err := resolveUrls(sources)
-	if err != nil {
-		output.Error("[!] Couldn't resolve URLs", err)
-		return sourcesBak
-	}
-
+	sources = resolveUrls(sources)
 	return sources
 }
 
@@ -247,17 +241,18 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func resolveUrls(s []string) ([]string, error) {
+func resolveUrls(s []string) []string {
 	for i := len(s) - 1; i >= 0; i-- {
 		resp, err := http.Get(s[i])
 		if err != nil {
-			return nil, err
+			output.Error("[!] Couldn't resolve URL", err)
+			s = append(s[:i], s[i+1:]...)
 		}
 		if resp.StatusCode != 200 && resp.StatusCode != 304 {
 			s = append(s[:i], s[i+1:]...)
 		}
 	}
-	return s, nil
+	return s
 }
 
 func completeUrls(s []string, mainUrl string) ([]string, error) {
