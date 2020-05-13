@@ -146,7 +146,8 @@ func processURLs(urls []string) []string {
 
 		if *resolveArg && *completeArg {
 			if completedSuccessfully {
-				sources = resolve(sources)
+				output.Log("[+] Resolving files")
+				sources = resolveUrls(sources)
 			} else {
 				output.Error("[!] Couldn't resolve URLs", nil)
 			}
@@ -169,12 +170,6 @@ func complete(sources []string, url string) (bool, []string) {
 	}
 
 	return true, sources
-}
-
-func resolve(sources []string) []string {
-	output.Log("[+] Resolving files")
-	sources = resolveUrls(sources)
-	return sources
 }
 
 // ToDO: Use channel instead of slide, and use io.Writer instead of file path
