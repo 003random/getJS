@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -195,8 +194,7 @@ func getScriptSrc(url string) ([]string, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		output.Error("[!] "+url+" returned an "+strconv.Itoa(res.StatusCode)+" instead of an 200 OK", nil)
-		return nil, nil
+		return nil, fmt.Errorf("%s returned an %d instead of an 200 OK", url, res.StatusCode)
 	}
 
 	// Load the HTML document
