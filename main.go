@@ -204,16 +204,15 @@ func getScriptSrc(url string) ([]string, error) {
 	}
 
 	var sources []string
+	attributes := []string{"src", "data-src"}
 
 	// Find the script tags, and get the src
 	doc.Find("script").Each(func(i int, s *goquery.Selection) {
-		src, _ := s.Attr("src")
-		dsrc, _ := s.Attr("data-src")
-		if src != "" {
-			sources = append(sources, src)
-		}
-		if dsrc != "" {
-			sources = append(sources, dsrc)
+		for _, attr := range attributes {
+			value, _ := s.Attr(attr)
+			if value != "" {
+				sources = append(sources, value)
+			}
 		}
 	})
 
