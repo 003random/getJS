@@ -162,11 +162,10 @@ func processURLs(urls []string) []string {
 
 func complete(sources []string, url string) (bool, []string) {
 	output.Log("[+] Completing URLs")
-	sourcesBak := sources
 	sources, err := completeUrls(sources, url)
 	if err != nil {
 		output.Error("[!] Couldn't complete URLs", err)
-		return false, sourcesBak
+		return false, sources
 	}
 
 	return true, sources
@@ -264,7 +263,7 @@ func resolveUrls(s []string) ([]string, error) {
 func completeUrls(s []string, mainUrl string) ([]string, error) {
 	u, err := url.Parse(mainUrl)
 	if err != nil {
-		return nil, err
+		return s, err
 	}
 
 	for i := range s {
