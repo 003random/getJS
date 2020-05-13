@@ -48,6 +48,8 @@ func Error(l logger, msg string, err error) {
 	l.Error(msg, err)
 }
 
+var resolveArg = flag.Bool("resolve", false, "Output only existing files")
+var completeArg = flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
 var output logger
 var au aurora.Aurora
 
@@ -55,8 +57,6 @@ func main() {
 	urlArg := flag.String("url", "", "The url to get the javascript sources from")
 	outputFileArg := flag.String("output", "", "Output file to save the results to")
 	inputFileArg := flag.String("input", "", "Input file with urls")
-	resolveArg := flag.Bool("resolve", false, "Output only existing files")
-	completeArg := flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
 	verboseArg := flag.Bool("verbose", false, "Display info of what is going on")
 	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
 	flag.Parse()
@@ -64,7 +64,6 @@ func main() {
 	au = aurora.NewAurora(!*noColorsArg)
 
 	var urls []string
-	var allSources []string
 
 	output = silent{}
 
@@ -114,6 +113,25 @@ func main() {
 		os.Exit(3)
 	}
 
+	allSources := processURLs(urls)
+
+	// Save to file or print
+	if *outputFileArg != "" {
+		output.Log("[+] Saving output to " + *outputFileArg)
+		err := saveToFile(allSources, *outputFileArg)
+		if err != nil {
+			output.Error("[!] Couldn't save to output file "+*outputFileArg, err)
+		}
+	} else {
+		for _, i := range allSources {
+			fmt.Println(i)
+		}
+	}
+}
+
+func processURLs(urls []string) []string {
+	var allSources []string
+
 	for _, e := range urls {
 		var sourcesBak []string
 		var completedSuccessfully = true
@@ -153,18 +171,7 @@ func main() {
 		allSources = append(allSources, sources...)
 	}
 
-	// Save to file or print
-	if *outputFileArg != "" {
-		output.Log("[+] Saving output to " + *outputFileArg)
-		err := saveToFile(allSources, *outputFileArg)
-		if err != nil {
-			output.Error("[!] Couldn't save to output file "+*outputFileArg, err)
-		}
-	} else {
-		for _, i := range allSources {
-			fmt.Println(i)
-		}
-	}
+	return allSources
 }
 
 // ToDO: Use channel instead of slide, and use io.Writer instead of file path
