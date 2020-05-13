@@ -133,8 +133,7 @@ func processURLs(urls []string) []string {
 	var allSources []string
 
 	for _, e := range urls {
-		var sourcesBak []string
-		var completedSuccessfully = true
+		completedSuccessfully := true
 		output.Log("[+] Getting sources from " + e)
 		sources, err := getScriptSrc(e)
 		if err != nil {
@@ -142,25 +141,12 @@ func processURLs(urls []string) []string {
 		}
 
 		if *completeArg {
-			output.Log("[+] Completing URLs")
-			sourcesBak = sources
-			sources, err = completeUrls(sources, e)
-			if err != nil {
-				output.Error("[!] Couldn't complete URLs", err)
-				sources = sourcesBak
-				completedSuccessfully = false
-			}
+			completedSuccessfully, sources = complete(sources, e)
 		}
 
 		if *resolveArg && *completeArg {
 			if completedSuccessfully {
-				output.Log("[+] Resolving files")
-				sourcesBak = sources
-				sources, err = resolveUrls(sources)
-				if err != nil {
-					output.Error("[!] Couldn't resolve URLs", err)
-					sources = sourcesBak
-				}
+				sources = resolve(sources)
 			} else {
 				output.Error("[!] Couldn't resolve URLs", nil)
 			}
@@ -172,6 +158,30 @@ func processURLs(urls []string) []string {
 	}
 
 	return allSources
+}
+
+func complete(sources []string, url string) (bool, []string) {
+	output.Log("[+] Completing URLs")
+	sourcesBak := sources
+	sources, err := completeUrls(sources, url)
+	if err != nil {
+		output.Error("[!] Couldn't complete URLs", err)
+		return false, sourcesBak
+	}
+
+	return true, sources
+}
+
+func resolve(sources []string) []string {
+	output.Log("[+] Resolving files")
+	sourcesBak := sources
+	sources, err := resolveUrls(sources)
+	if err != nil {
+		output.Error("[!] Couldn't resolve URLs", err)
+		return sourcesBak
+	}
+
+	return sources
 }
 
 // ToDO: Use channel instead of slide, and use io.Writer instead of file path
