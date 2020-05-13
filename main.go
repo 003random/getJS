@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/logrusorgru/aurora"
@@ -129,35 +130,55 @@ func main() {
 	}
 }
 
-func processURLs(urls []string) []string {
-	var allSources []string
+func processURL(url string, result chan []string, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	for _, e := range urls {
-		completedSuccessfully := true
-		output.Log("[+] Getting sources from " + e)
-		sources, err := getScriptSrc(e)
-		if err != nil {
-			output.Error("[!] Couldn't get sources from "+e, err)
-		}
-
-		if *completeArg {
-			completedSuccessfully, sources = complete(sources, e)
-		}
-
-		if *resolveArg && *completeArg {
-			if completedSuccessfully {
-				output.Log("[+] Resolving files")
-				sources = resolveUrls(sources)
-			} else {
-				output.Error("[!] Couldn't resolve URLs", nil)
-			}
-		} else if *resolveArg {
-			output.Error("[!] Resolve can only be used in combination with -complete", nil)
-		}
-
-		allSources = append(allSources, sources...)
+	output.Log("[+] Getting sources from " + url)
+	sources, err := getScriptSrc(url)
+	if err != nil {
+		output.Error("[!] Couldn't get sources from "+url, err)
 	}
 
+	var completedSuccessfully bool
+	if *completeArg {
+		completedSuccessfully, sources = complete(sources, url)
+	}
+
+	if *resolveArg && *completeArg {
+		if completedSuccessfully {
+			output.Log("[+] Resolving files")
+			sources = resolveUrls(sources)
+		} else {
+			output.Error("[!] Couldn't resolve URLs", nil)
+		}
+	} else if *resolveArg {
+		output.Error("[!] Resolve can only be used in combination with -complete", nil)
+	}
+
+	result <- sources
+}
+
+func processURLs(urls []string) []string {
+	var allSources []string
+	sources := make(chan []string)
+
+	var wg sync.WaitGroup
+	for _, url := range urls {
+		wg.Add(1)
+		go processURL(url, sources, &wg)
+	}
+
+	done := make(chan int)
+	go func() {
+		for source := range sources {
+			allSources = append(allSources, source...)
+		}
+		done <- 1
+	}()
+
+	wg.Wait()
+	close(sources)
+	<-done
 	return allSources
 }
 
