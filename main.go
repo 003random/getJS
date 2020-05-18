@@ -162,12 +162,6 @@ func processURLs(urls []string) []string {
 	var allSources []string
 	sources := make(chan []string)
 
-	var wg sync.WaitGroup
-	for _, url := range urls {
-		wg.Add(1)
-		go processURL(url, sources, &wg)
-	}
-
 	done := make(chan int)
 	go func() {
 		for source := range sources {
@@ -175,6 +169,12 @@ func processURLs(urls []string) []string {
 		}
 		done <- 1
 	}()
+
+	var wg sync.WaitGroup
+	for _, url := range urls {
+		wg.Add(1)
+		go processURL(url, sources, &wg)
+	}
 
 	wg.Wait()
 	close(sources)
