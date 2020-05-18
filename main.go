@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -266,8 +268,23 @@ func saveJS(link string, body io.ReadCloser) {
 		return
 	}
 
-	elements := strings.Split(u.Path, "/")
-	filename := elements[len(elements)-1]
+	filename := filepath.Base(u.Path)
+
+	ext := filepath.Ext(filename)
+	if ext == "" {
+		ext = ".js"
+		filename = filename + ext
+	}
+
+	file := strings.TrimSuffix(filename, ext)
+
+	_, err = os.Stat(filename)
+	i := 1
+	for err == nil && i < 99 {
+		filename = file + strconv.Itoa(i) + ext
+		_, err = os.Stat(filename)
+		i++
+	}
 
 	out, err := os.Create(filename)
 	if err != nil {
