@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -51,6 +52,7 @@ func Error(l logger, msg string, err error) {
 
 var resolveArg = flag.Bool("resolve", false, "Output only existing files")
 var completeArg = flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
+var saveArg = flag.Bool("save", false, "Save scripts to files")
 var output logger
 var au aurora.Aurora
 
@@ -140,11 +142,11 @@ func processURL(url string, result chan []string, wg *sync.WaitGroup) {
 	}
 
 	var completedSuccessfully bool
-	if *completeArg {
+	if *completeArg || *saveArg {
 		completedSuccessfully, sources = complete(sources, url)
 	}
 
-	if *resolveArg && *completeArg {
+	if (*resolveArg && *completeArg) || *saveArg {
 		if completedSuccessfully {
 			output.Log("[+] Resolving files")
 			sources = resolveUrls(sources)
@@ -257,6 +259,30 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
+func saveJS(link string, body io.ReadCloser) {
+	u, err := url.Parse(link)
+	if err != nil {
+		output.Error("[!] Couldn't parse URL", err)
+		return
+	}
+
+	elements := strings.Split(u.Path, "/")
+	filename := elements[len(elements)-1]
+
+	out, err := os.Create(filename)
+	if err != nil {
+		output.Error("[!] Couldn't create the file", err)
+		return
+	}
+
+	_, err = io.Copy(out, body)
+	if err != nil {
+		output.Error("[!] Problem saving to file", err)
+	}
+
+	out.Close()
+}
+
 func resolveUrls(s []string) []string {
 	for i := len(s) - 1; i >= 0; i-- {
 		resp, err := http.Get(s[i])
@@ -266,6 +292,11 @@ func resolveUrls(s []string) []string {
 		}
 		if resp.StatusCode != 200 && resp.StatusCode != 304 {
 			s = append(s[:i], s[i+1:]...)
+		}
+
+		if resp != nil {
+			saveJS(s[i], resp.Body)
+			resp.Body.Close()
 		}
 	}
 	return s
