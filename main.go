@@ -261,7 +261,7 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func saveJS(link string, body io.ReadCloser) {
+func saveJS(link string, data io.Reader) {
 	u, err := url.Parse(link)
 	if err != nil {
 		output.Error("[!] Couldn't parse URL", err)
@@ -292,7 +292,7 @@ func saveJS(link string, body io.ReadCloser) {
 		return
 	}
 
-	_, err = io.Copy(out, body)
+	_, err = io.Copy(out, data)
 	if err != nil {
 		output.Error("[!] Problem saving to file", err)
 	}
