@@ -238,6 +238,8 @@ func getScriptSrc(url string) ([]string, error) {
 			value, _ := s.Attr(attr)
 			if value != "" {
 				sources = append(sources, value)
+			} else if s.Text() != "" && *saveArg {
+				saveJS(url, strings.NewReader(s.Text()))
 			}
 		}
 	})
