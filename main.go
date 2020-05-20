@@ -314,7 +314,10 @@ func resolveUrls(s []string) []string {
 		}
 
 		if resp != nil {
-			saveJS(s[i], resp.Body)
+			if *saveArg {
+				saveJS(s[i], resp.Body)
+			}
+
 			resp.Body.Close()
 		}
 	}
