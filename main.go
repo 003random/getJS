@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/logrusorgru/aurora"
+
+	flag "github.com/spf13/pflag"
 )
 
 type logger interface {
@@ -53,13 +54,14 @@ var output logger
 var au aurora.Aurora
 
 func main() {
-	urlArg := flag.String("url", "", "The url to get the javascript sources from")
-	outputFileArg := flag.String("output", "", "Output file to save the results to")
-	inputFileArg := flag.String("input", "", "Input file with urls")
-	resolveArg := flag.Bool("resolve", false, "Output only existing files")
-	completeArg := flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
-	verboseArg := flag.Bool("verbose", false, "Display info of what is going on")
-	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
+	urlArg := flag.StringP("url", "u", "", "The url to get the javascript sources from")
+	outputFileArg := flag.StringP("output", "o", "", "Output file to save the results to")
+	inputFileArg := flag.StringP("input", "i", "", "Input file with urls")
+	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
+	resolveArg := flag.BoolP("resolve", "r", false, "Output only existing files")
+	completeArg := flag.BoolP("complete", "c", false, "Complete the url. e.g. append the domain to the path")
+	verboseArg := flag.BoolP("verbose", "v", false, "Display info of what is going on")
+	noColorsArg := flag.BoolP("nocolors", "n", false, "Enable or disable colors")
 	flag.Parse()
 
 	au = aurora.NewAurora(!*noColorsArg)
@@ -119,7 +121,9 @@ func main() {
 		var sourcesBak []string
 		var completedSuccessfully = true
 		output.Log("[+] Getting sources from " + e)
-		sources, err := getScriptSrc(e)
+
+		sources, err := getScriptSrc(e, *HeaderArg)
+
 		if err != nil {
 			output.Error("[!] Couldn't get sources from "+e, err)
 		}
@@ -187,13 +191,30 @@ func saveToFile(sources []string, path string) error {
 	return w.Flush()
 }
 
-func getScriptSrc(url string) ([]string, error) {
-	// Request the HTML page.
-	res, err := http.Get(url)
+func getScriptSrc(url string, headers []string) ([]string, error) {
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	for _, d := range headers {
+		values := strings.Split(d, ":")
+		if len(values) == 2 {
+			output.Log("[+] Adding: " + values[0] + ": " + values[1])
+			req.Header.Set(values[0], values[1])
+		}
+	}
+
+	client := new(http.Client)
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	defer res.Body.Close()
+
 	if res.StatusCode != 200 {
 		output.Error("[!] "+url+" returned an "+strconv.Itoa(res.StatusCode)+" instead of an 200 OK", nil)
 		return nil, nil
