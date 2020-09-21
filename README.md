@@ -16,9 +16,25 @@ Make sure you have [GO](https://golang.org/) installed on your system.
 
 getJS is written in GO. You can install it with `go get`:
 
+for original code by 003random
 ```
 go get github.com/003random/getJS
 ```
+
+for my modified code
+```
+go get github.com/bp0lr/getJS
+```
+
+### Why forking
+
+Looks like 003random is not currently merging pull requests.
+
+### tool improvements
+
+* You can add your own headers to the request. (Cookie: foo=bar)
+* You can save the files.
+* You can save inline code also.
 
 # Usage  
 Note: When you supply urls from different sources, e.g. with stdin and an input file, it will add all the urls together :)  
@@ -28,7 +44,6 @@ To get all  options, do:
 ```bash
 getJS -h
 ```
-
 
 | Flag | Description | Example |
 |------|-------------|---------|
@@ -40,11 +55,14 @@ getJS -h
 | --complete(-c)  | Complete the urls. e.g. /js/index.js -> htt<span></span>ps://example.<span></span>com/js/index.js  | getJS --complete |
 | --resolve(-r)   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS --complete --resolve |
 | --nocolors(-n)   | Don't color the output   | getJS --nocolors |
+| --save(-s)   | Download and save the files to the disk   | getJS --save |
+
+
+## asciinema
+ [![asciicast](https://asciinema.org/a/ebAbqPkLDbDss6CQTMhvf8mZL.png)](https://asciinema.org/a/ebAbqPkLDbDss6CQTMhvf8mZL)
+
 
 ## Examples  
-
- ![screenshot](https://poc-server.com/getJS/screenshot_.png)
-
 
 getJS supports stdin data. To pipe urls to getJS, use the following:  
 
@@ -52,14 +70,14 @@ getJS supports stdin data. To pipe urls to getJS, use the following:
 $ cat domains.txt | getJS
 ```  
 
-To add your custom headers you can use:
+To add custom headers you can use:
 ```bash
-$ getJS --url=https://poc-server.com | xargs wget
+$ getJS -u "https://poc-server.com" -H "Cookie: foo=bar" -H "User-Agent: MyCustomAgent"
 ```
 
-To save the js files, you can use:  
+To save files and inline code to your disk, you can use:  
 ```bash
-$ getJS --url=https://poc-server.com | xargs wget
+$ getJS --url=https://poc-server.com --save
 ```
 
 If you would like the output to be in JSON format, you can combine it with [@Tomnomnom's](https://github.com/tomnomnom) [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
@@ -103,9 +121,7 @@ This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-* [@jimen0](https://github.com/jimen0) for helping getting me started with GO
-
+* [@003random](https://github.com/003random) for the code base.
+* [@pczajkowski](https://github.com/pczajkowski) for some nice code improvement and ideas.
 
 ---
-
-*This is my first tool written in GO. I created it to learn the language more. Please don't hate on my coding style xD (useful feeback is always welcome!)*
