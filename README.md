@@ -22,7 +22,7 @@ go get github.com/003random/getJS
 
 # Usage  
 Note: When you supply urls from different sources, e.g. with stdin and an input file, it will add all the urls together :)  
-Example: `echo "https://github.com" | getJS -url=https://example.com -input=domains.txt`  
+Example: `echo "https://github.com" | getJS --url https://example.com --input domains.txt`  
   
 To get all  options, do:  
 ```bash
@@ -32,13 +32,17 @@ getJS -h
 
 | Flag | Description | Example |
 |------|-------------|---------|
-| -url   | The url to get the javascript sources from | getJS -url=htt<span></span>ps://poc-server.com |
-| -input   | Input file with urls            | getJS -input=domains.txt |
-| -output   | The file where to save the output to        | getJS -output=output.txt |
-| -verbose  | Display info of what is going on           | getJS -verbose |
-| -complete  | Complete the urls. e.g. /js/index.js -> htt<span></span>ps://example.<span></span>com/js/index.js  | getJS -complete |
-| -resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with -complete)   | getJS -complete -resolve |
-| -nocolors   | Don't color the output   | getJS -nocolors |
+| --url   | The url to get the javascript sources from | getJS --url https://poc-server.com |
+| --method   | The request method. e.g. POST or GET. Default: "GET"| getJS --url https://poc-server.com --method POST |
+| --timeout   | The request timeout. Default: 10 (secs) | getJS --url https://poc-server.com --timeout 15 |
+| --insecure   | Skip SSL certificate verification. Use when the cert is expired or invalid | getJS --url https://poc-server.com --insecure |
+| --header   | Custom request header(s). -H "Authorization: Bearer token" | getJS --url https://poc-server.com --insecure |
+| --input   | Input file with urls            | getJS --input domains.txt |
+| --output   | The file where to save the output to        | getJS --output output.txt |
+| --verbose  | Display info of what is going on           | getJS --verbose |
+| --complete  | Complete the urls. e.g. /js/index.js -> htt<span></span>ps://example.<span></span>com/js/index.js  | getJS --complete |
+| --resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with --complete)   | getJS --complete --resolve |
+| --nocolors   | Don't color the output   | getJS --nocolors |
 
 ## Examples  
   
@@ -53,32 +57,32 @@ $ cat domains.txt | getJS
   
 To save the js files, you can use:  
 ```bash
-$ getJS -url=https://poc-server.com | xargs wget
+$ getJS --url https://poc-server.com | xargs wget
 ```
   
 If you would like the output to be in JSON format, you can combine it with [@Tomnomnom's](https://github.com/tomnomnom) [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
 ```bash
-$ getJS -url=https://poc-server.com | tojson
+$ getJS --url https://poc-server.com | tojson
 ```  
   
 To feed urls from a file use:  
 ```bash
-$ getJS -input=domains.txt
+$ getJS --input domains.txt
 ```  
   
 To save the results to a file, and don't display anything, use:  
 ```bash
-$ getJS -url=https://poc-server.com -output=results.txt
+$ getJS --url https://poc-server.com --output results.txt
 ```  
   
 If you want to have a list of full urls as output use:  
 ```bash
-$ getJS -url=domains.txt -complete
+$ getJS --url domains.txt -complete
 ```  
   
 If you want to only show the existing js files, use:  
 ```bash
-$ getJS -url=domains.txt -complete -resolve
+$ getJS --url domains.txt --complete --resolve
 ```  
 
 ## Built With
@@ -102,4 +106,4 @@ This project is licensed under the MIT License.
     
 ---
     
-*This is my first tool written in GO. I created it to learn the language more. Please don't hate on my coding style xD (useful feeback is always welcome!)*
+*This is my first tool written in GO. I created it to learn the language more. (useful feeback is always welcome!)*
