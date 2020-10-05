@@ -104,7 +104,7 @@ func main() {
 	}
 
 	if *urlArg != "" {
-		output.Log("[+] Set url to " + *urlArg)
+		output.Log(fmt.Sprintf("[+] Set url to %s", *urlArg))
 		urls = append(urls, *urlArg)
 	}
 
@@ -180,18 +180,13 @@ func processURLs(urls []string) []string {
 		go processURL(url, sources, &wg)
 	}
 
-	wg.Wait()
-	close(sources)
-	<-done
-	return allSources
-}
-
-func complete(sources []string, url string) (bool, []string) {
-	output.Log("[+] Completing URLs")
-	sources, err := completeUrls(sources, url)
-	if err != nil {
-		output.Error("[!] Couldn't complete URLs", err)
-		return false, sources
+	// Save to file
+	if *outputFileArg != "" {
+		output.Log(fmt.Sprintf("[+] Saving output to %s", *outputFileArg))
+		err := saveToFile(allSources, *outputFileArg)
+		if err != nil {
+			output.Error(fmt.Sprintf("[!] Couldn't save to output file %s", *outputFileArg), err)
+		}
 	}
 
 	return true, sources
