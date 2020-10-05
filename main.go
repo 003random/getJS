@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -97,7 +98,14 @@ func main() {
 	}
 
 	if *inputFileArg != "" {
-		lines, err := readLines(*inputFileArg)
+		f, err := os.Open(*inputFileArg)
+		if err != nil {
+			output.Error("[!] Couldn't open input file", err)
+			return
+		}
+		defer f.Close()
+
+		lines, err := readLines(f)
 		if err != nil {
 			output.Error("[!] Couldn't read from input file", err)
 		}
@@ -249,16 +257,9 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 	return sources, nil
 }
 
-// ToDo: Use io.Writer instead of a file path
-func readLines(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
+func readLines(r io.Reader) ([]string, error) {
 	var lines []string
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
