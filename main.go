@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -101,7 +100,7 @@ func main() {
 	}
 
 	if *urlArg != "" {
-		output.Log("[+] Set url to " + *urlArg)
+		output.Log(fmt.Sprintf("[+] Set url to %s", *urlArg))
 		urls = append(urls, *urlArg)
 	}
 
@@ -121,7 +120,7 @@ func main() {
 		output.Log("[+] Getting sources from " + e)
 		sources, err := getScriptSrc(e)
 		if err != nil {
-			output.Error("[!] Couldn't get sources from "+e, err)
+			output.Error(fmt.Sprintf("[!] Couldn't get sources from %s", e), err)
 		}
 
 		if *completeArg {
@@ -163,10 +162,10 @@ func main() {
 
 	// Save to file
 	if *outputFileArg != "" {
-		output.Log("[+] Saving output to " + *outputFileArg)
+		output.Log(fmt.Sprintf("[+] Saving output to %s", *outputFileArg))
 		err := saveToFile(allSources, *outputFileArg)
 		if err != nil {
-			output.Error("[!] Couldn't save to output file "+*outputFileArg, err)
+			output.Error(fmt.Sprintf("[!] Couldn't save to output file %s", *outputFileArg), err)
 		}
 	}
 
@@ -195,7 +194,7 @@ func getScriptSrc(url string) ([]string, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		output.Error("[!] "+url+" returned an "+strconv.Itoa(res.StatusCode)+" instead of an 200 OK", nil)
+		output.Error(fmt.Sprintf("[!] %s returned an %d instead of %d", url, res.StatusCode, http.StatusOK), nil)
 		return nil, nil
 	}
 
