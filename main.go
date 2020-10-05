@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/logrusorgru/aurora"
+	flag "github.com/spf13/pflag"
 )
 
 type logger interface {
@@ -59,6 +59,7 @@ func main() {
 	completeArg := flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
 	verboseArg := flag.Bool("verbose", false, "Display info of what is going on")
 	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
+	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
 	flag.Parse()
 
 	au = aurora.NewAurora(!*noColorsArg)
@@ -118,7 +119,7 @@ func main() {
 		var sourcesBak []string
 		var completedSuccessfully = true
 		output.Log("[+] Getting sources from " + e)
-		sources, err := getScriptSrc(e)
+		sources, err := getScriptSrc(e, *HeaderArg)
 		if err != nil {
 			output.Error(fmt.Sprintf("[!] Couldn't get sources from %s", e), err)
 		}
@@ -186,11 +187,25 @@ func saveToFile(sources []string, path string) error {
 	return w.Flush()
 }
 
-func getScriptSrc(url string) ([]string, error) {
+func getScriptSrc(url string, headers []string) ([]string, error) {
 	// Request the HTML page.
-	res, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return []string{}, err
+	}
+
+	for _, d := range headers {
+		values := strings.Split(d, ":")
+		if len(values) == 2 {
+			output.Log("[+] New Header: " + values[0] + ": " + values[1])
+			req.Header.Set(values[0], values[1])
+		}
+	}
+
+	client := new(http.Client)
+	res, err := client.Do(req)
+	if err != nil {
+		return []string{}, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
