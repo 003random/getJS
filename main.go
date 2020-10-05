@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -52,7 +53,7 @@ var output logger
 var au aurora.Aurora
 
 func main() {
-	urlArg := flag.String("url", "", "The url to get the javascript sources from")
+	urlArg := flag.String("url", "U", "The url to get the javascript sources from")
 	outputFileArg := flag.String("output", "", "Output file to save the results to")
 	inputFileArg := flag.String("input", "", "Input file with urls")
 	resolveArg := flag.Bool("resolve", false, "Output only existing files")
@@ -60,6 +61,7 @@ func main() {
 	verboseArg := flag.Bool("verbose", false, "Display info of what is going on")
 	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
 	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
+	insecureArg := flag.Bool("insecure", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
 	flag.Parse()
 
 	au = aurora.NewAurora(!*noColorsArg)
@@ -119,7 +121,7 @@ func main() {
 		var sourcesBak []string
 		var completedSuccessfully = true
 		output.Log("[+] Getting sources from " + e)
-		sources, err := getScriptSrc(e, *HeaderArg)
+		sources, err := getScriptSrc(e, *HeaderArg, *insecureArg)
 		if err != nil {
 			output.Error(fmt.Sprintf("[!] Couldn't get sources from %s", e), err)
 		}
@@ -187,7 +189,7 @@ func saveToFile(sources []string, path string) error {
 	return w.Flush()
 }
 
-func getScriptSrc(url string, headers []string) ([]string, error) {
+func getScriptSrc(url string, headers []string, insecure bool) ([]string, error) {
 	// Request the HTML page.
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -202,7 +204,20 @@ func getScriptSrc(url string, headers []string) ([]string, error) {
 		}
 	}
 
-	client := new(http.Client)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+
+	var client = &http.Client{
+		Transport: tr,
+	}
+
+	if insecure {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
 	res, err := client.Do(req)
 	if err != nil {
 		return []string{}, err
