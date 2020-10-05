@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/logrusorgru/aurora"
@@ -53,7 +54,8 @@ var output logger
 var au aurora.Aurora
 
 func main() {
-	urlArg := flag.String("url", "U", "The url to get the javascript sources from")
+	urlArg := flag.String("url", "", "The url to get the javascript sources from")
+	methodArg := flag.String("method", "GET", "The request method. e.g. GET or POST")
 	outputFileArg := flag.String("output", "", "Output file to save the results to")
 	inputFileArg := flag.String("input", "", "Input file with urls")
 	resolveArg := flag.Bool("resolve", false, "Output only existing files")
@@ -62,6 +64,7 @@ func main() {
 	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
 	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
 	insecureArg := flag.Bool("insecure", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
+	timeoutArg := flag.Int("timeout", 10, "Max timeout for the requests")
 	flag.Parse()
 
 	au = aurora.NewAurora(!*noColorsArg)
@@ -121,7 +124,7 @@ func main() {
 		var sourcesBak []string
 		var completedSuccessfully = true
 		output.Log("[+] Getting sources from " + e)
-		sources, err := getScriptSrc(e, *HeaderArg, *insecureArg)
+		sources, err := getScriptSrc(e, *methodArg, *HeaderArg, *insecureArg, *timeoutArg)
 		if err != nil {
 			output.Error(fmt.Sprintf("[!] Couldn't get sources from %s", e), err)
 		}
@@ -174,7 +177,6 @@ func main() {
 
 }
 
-// ToDO: Use channel instead of slide, and use io.Writer instead of file path
 func saveToFile(sources []string, path string) error {
 	file, err := os.Create(path)
 	if err != nil {
@@ -189,9 +191,9 @@ func saveToFile(sources []string, path string) error {
 	return w.Flush()
 }
 
-func getScriptSrc(url string, headers []string, insecure bool) ([]string, error) {
+func getScriptSrc(url string, method string, headers []string, insecure bool, timeout int) ([]string, error) {
 	// Request the HTML page.
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return []string{}, err
 	}
@@ -205,17 +207,13 @@ func getScriptSrc(url string, headers []string, insecure bool) ([]string, error)
 	}
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+		ResponseHeaderTimeout: time.Duration(time.Duration(timeout) * time.Second),
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: insecure},
 	}
 
 	var client = &http.Client{
+		Timeout:   time.Duration(time.Duration(timeout) * time.Second),
 		Transport: tr,
-	}
-
-	if insecure {
-		client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
 	}
 
 	res, err := client.Do(req)
