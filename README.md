@@ -57,7 +57,7 @@ $ cat domains.txt | getJS
   
 To save the js files, you can use:  
 ```bash
-$ getJS --url https://poc-server.com | xargs wget
+$ getJS --complete --url https://poc-server.com | xargs wget
 ```
   
 If you would like the output to be in JSON format, you can combine it with [@Tomnomnom's](https://github.com/tomnomnom) [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
