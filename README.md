@@ -36,7 +36,7 @@ getJS -h
 | --method   | The request method. e.g. POST or GET. Default: "GET"| getJS --url https://poc-server.com --method POST |
 | --timeout   | The request timeout. Default: 10 (secs) | getJS --url https://poc-server.com --timeout 15 |
 | --insecure   | Skip SSL certificate verification. Use when the cert is expired or invalid | getJS --url https://poc-server.com --insecure |
-| --header   | Custom request header(s). -H "Authorization: Bearer token" | getJS --url https://poc-server.com --insecure |
+| --header   | Custom request header(s) | getJS --url https://poc-server.com --header "Authorization: Bearer token" |
 | --input   | Input file with urls            | getJS --input domains.txt |
 | --output   | The file where to save the output to        | getJS --output output.txt |
 | --verbose  | Display info of what is going on           | getJS --verbose |
