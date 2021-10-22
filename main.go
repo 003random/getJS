@@ -205,7 +205,7 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: insecure},
 	}
 
-	var client = &http.Client{
+	client := &http.Client{
 		Timeout:   time.Duration(time.Duration(timeout) * time.Second),
 		Transport: tr,
 	}
@@ -253,11 +253,12 @@ func readLines(r io.Reader) ([]string, error) {
 }
 
 func resolveUrls(s []string) ([]string, error) {
-	for i := len(s) - 1; i >= 0; i-- {
-		if resp, err := http.Get(s[i]); err != nil {
+	var resolved []string
+	for _, url := range s {
+		if resp, err := http.Get(url); err != nil {
 			return nil, err
-		} else if resp.StatusCode != 200 && resp.StatusCode != 304 {
-			s = append(s[:i], s[i+1:]...)
+		} else if resp.StatusCode == 200 || resp.StatusCode == 304 {
+			resolved = append(resolved, url)
 		}
 	}
 	return s, nil
