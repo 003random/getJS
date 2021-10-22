@@ -16,42 +16,29 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-type logger interface {
-	Log(msg string)
-	Error(msg string, err error)
+const (
+	LOG_SILENT = iota
+	LOG_VERBOSE
+)
+
+type logger struct {
+	logLevel int
 }
 
-type silent struct{}
-
-func (s silent) Log(msg string) {
+func (l *logger) Log(msg string) {
+	if l.logLevel == LOG_VERBOSE {
+		fmt.Println(au.Cyan(msg))
+	}
 }
 
-func (s silent) Error(msg string, err error) {
-}
-
-type verbose struct {
-}
-
-func (v verbose) Log(msg string) {
-	fmt.Println(au.Cyan(msg))
-}
-
-func Log(l logger, msg string) {
-	l.Log(msg)
-}
-
-func (v verbose) Error(msg string, err error) {
-	fmt.Fprintln(os.Stderr, au.Red(msg))
-	if err != nil {
+func (l *logger) Error(msg string, err error) {
+	if l.logLevel == LOG_VERBOSE {
+		fmt.Fprintln(os.Stderr, au.Red(msg))
 		fmt.Fprintln(os.Stderr, au.Red("[!] Error: "), au.Red(err))
 	}
 }
 
-func Error(l logger, msg string, err error) {
-	l.Error(msg, err)
-}
-
-var output logger
+var output *logger
 var au aurora.Aurora
 
 func main() {
@@ -73,10 +60,9 @@ func main() {
 	var urls []string
 	var allSources []string
 
-	output = silent{}
-
+	output = &logger{logLevel: LOG_SILENT}
 	if *verboseArg {
-		output = verbose{}
+		output.logLevel = LOG_VERBOSE
 	}
 
 	stat, err := os.Stdin.Stat()
