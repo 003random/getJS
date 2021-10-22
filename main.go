@@ -21,24 +21,24 @@ const (
 	LOG_VERBOSE
 )
 
-type logger struct {
+type Logger struct {
 	logLevel int
 }
 
-func (l *logger) Log(msg string) {
+func (l *Logger) Log(msg string) {
 	if l.logLevel == LOG_VERBOSE {
 		fmt.Println(au.Cyan(msg))
 	}
 }
 
-func (l *logger) Error(msg string, err error) {
+func (l *Logger) Error(msg string, err error) {
 	if l.logLevel == LOG_VERBOSE {
 		fmt.Fprintln(os.Stderr, au.Red(msg))
 		fmt.Fprintln(os.Stderr, au.Red("[!] Error: "), au.Red(err))
 	}
 }
 
-var output *logger
+var output *Logger
 var au aurora.Aurora
 
 func main() {
@@ -60,7 +60,7 @@ func main() {
 	var urls []string
 	var allSources []string
 
-	output = &logger{logLevel: LOG_SILENT}
+	output = &Logger{logLevel: LOG_SILENT}
 	if *verboseArg {
 		output.logLevel = LOG_VERBOSE
 	}
