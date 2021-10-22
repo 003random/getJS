@@ -31,11 +31,21 @@ func (l *Logger) Log(msg string) {
 	}
 }
 
+func (l *Logger) LogF(msg string, a ...interface{}) {
+	l.Log(fmt.Sprintf(msg, a...))
+}
+
 func (l *Logger) Error(msg string, err error) {
 	if l.logLevel == LOG_VERBOSE {
 		fmt.Fprintln(os.Stderr, au.Red(msg))
-		fmt.Fprintln(os.Stderr, au.Red("[!] Error: "), au.Red(err))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, au.Red("[!] Error: "), au.Red(err))
+		}
 	}
+}
+
+func (l *Logger) ErrorF(msg string, err error, a ...interface{}) {
+	l.Error(fmt.Sprintf(msg, a...), err)
 }
 
 var output *Logger
@@ -71,12 +81,10 @@ func main() {
 	}
 
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			urls = append(urls, scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
+		if lines, err := readLines(os.Stdin); err != nil {
 			output.Error("[!] Couldnt read Stdin", err)
+		} else {
+			urls = append(urls, lines...)
 		}
 		if len(urls) > 0 {
 			output.Log("[+] Received urls from Stdin")
@@ -95,12 +103,12 @@ func main() {
 		if err != nil {
 			output.Error("[!] Couldn't read from input file", err)
 		}
-		output.Log("[+] Set url file to " + *inputFileArg)
+		output.LogF("[+] Set url file to %s", *inputFileArg)
 		urls = append(urls, lines...)
 	}
 
 	if *urlArg != "" {
-		output.Log(fmt.Sprintf("[+] Set url to %s", *urlArg))
+		output.LogF("[+] Set url to %s", *urlArg)
 		urls = append(urls, *urlArg)
 	}
 
@@ -120,7 +128,7 @@ func main() {
 		output.Log("[+] Getting sources from " + e)
 		sources, err := getScriptSrc(e, *methodArg, *HeaderArg, *insecureArg, *timeoutArg)
 		if err != nil {
-			output.Error(fmt.Sprintf("[!] Couldn't get sources from %s", e), err)
+			output.ErrorF("[!] Couldn't get sources from %s", err, e)
 		}
 
 		if *completeArg {
@@ -162,10 +170,10 @@ func main() {
 
 	// Save to file
 	if *outputFileArg != "" {
-		output.Log(fmt.Sprintf("[+] Saving output to %s", *outputFileArg))
+		output.LogF("[+] Saving output to %s", *outputFileArg)
 		err := saveToFile(allSources, *outputFileArg)
 		if err != nil {
-			output.Error(fmt.Sprintf("[!] Couldn't save to output file %s", *outputFileArg), err)
+			output.ErrorF("[!] Couldn't save to output file %s", err, *outputFileArg)
 		}
 	}
 
@@ -195,7 +203,7 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 	for _, d := range headers {
 		values := strings.Split(d, ":")
 		if len(values) == 2 {
-			output.Log("[+] New Header: " + values[0] + ": " + values[1])
+			output.LogF("[+] New Header: %s: %s", values[0], values[1])
 			req.Header.Set(values[0], values[1])
 		}
 	}
@@ -216,7 +224,7 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		output.Error(fmt.Sprintf("[!] %s returned an %d instead of %d", url, res.StatusCode, http.StatusOK), nil)
+		output.ErrorF("[!] %s returned an %d instead of %d", nil, url, res.StatusCode, http.StatusOK)
 		return nil, nil
 	}
 
