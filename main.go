@@ -52,16 +52,16 @@ var output *Logger
 var au aurora.Aurora
 
 func main() {
-	urlArg := flag.String("url", "", "The url to get the javascript sources from")
-	methodArg := flag.String("method", "GET", "The request method. e.g. GET or POST")
-	outputFileArg := flag.String("output", "", "Output file to save the results to")
+	urlArg := flag.StringP("url", "u", "", "The url to get the javascript sources from")
+	methodArg := flag.StringP("method", "X", "GET", "The request method. e.g. GET or POST")
+	outputFileArg := flag.StringP("output", "o", "", "Output file to save the results to")
 	inputFileArg := flag.String("input", "", "Input file with urls")
 	resolveArg := flag.Bool("resolve", false, "Output only existing files")
 	completeArg := flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
-	verboseArg := flag.Bool("verbose", false, "Display info of what is going on")
-	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
+	verboseArg := flag.BoolP("verbose", "v", false, "Display info of what is going on")
+	noColorsArg := flag.BoolP("nocolors", "nc", false, "Enable or disable colors")
 	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
-	insecureArg := flag.Bool("insecure", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
+	insecureArg := flag.BoolP("insecure", "k", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
 	timeoutArg := flag.Int("timeout", 10, "Max timeout for the requests")
 	flag.Parse()
 
