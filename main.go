@@ -123,39 +123,35 @@ func main() {
 	}
 
 	for _, e := range urls {
-		var sourcesBak []string
 		var completedSuccessfully = true
 		output.Log("[+] Getting sources from " + e)
 		sources, err := getScriptSrc(e, *methodArg, *HeaderArg, *insecureArg, *timeoutArg)
 		if err != nil {
 			output.ErrorF("[!] Couldn't get sources from %s", err, e)
+			continue
 		}
 
 		if *completeArg {
 			output.Log("[+] Completing URLs")
-			sourcesBak = sources
-			sources, err = completeUrls(sources, e)
-			if err != nil {
+			if completedSources, err := completeUrls(sources, e); err != nil {
 				output.Error("[!] Couldn't complete URLs", err)
-				sources = sourcesBak
 				completedSuccessfully = false
+			} else {
+				sources = completedSources
 			}
 		}
 
 		if *resolveArg && *completeArg {
 			if completedSuccessfully {
 				output.Log("[+] Resolving files")
-				sourcesBak = sources
-				sources, err = resolveUrls(sources)
-				if err != nil {
+				if resolvedSources, err := resolveUrls(sources); err != nil {
 					output.Error("[!] Couldn't resolve URLs", err)
-					sources = sourcesBak
+				} else {
+					sources = resolvedSources
 				}
 			} else {
 				output.Error("[!] Couldn't resolve URLs", nil)
 			}
-		} else if *resolveArg {
-			output.Error("[!] Resolve can only be used in combination with -complete", nil)
 		}
 
 		for _, i := range sources {
