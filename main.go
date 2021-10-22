@@ -75,12 +75,9 @@ func main() {
 		output.logLevel = LOG_VERBOSE
 	}
 
-	stat, err := os.Stdin.Stat()
-	if err != nil {
+	if stat, err := os.Stdin.Stat(); err != nil {
 		output.Error("[!] Couldnt read Stdin", err)
-	}
-
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
+	} else if (stat.Mode() & os.ModeCharDevice) == 0 {
 		if lines, err := readLines(os.Stdin); err != nil {
 			output.Error("[!] Couldnt read Stdin", err)
 		} else {
@@ -99,12 +96,12 @@ func main() {
 		}
 		defer f.Close()
 
-		lines, err := readLines(f)
-		if err != nil {
+		if lines, err := readLines(f); err != nil {
 			output.Error("[!] Couldn't read from input file", err)
+		} else {
+			output.LogF("[+] Set url file to %s", *inputFileArg)
+			urls = append(urls, lines...)
 		}
-		output.LogF("[+] Set url file to %s", *inputFileArg)
-		urls = append(urls, lines...)
 	}
 
 	if *urlArg != "" {
@@ -167,8 +164,7 @@ func main() {
 	// Save to file
 	if *outputFileArg != "" {
 		output.LogF("[+] Saving output to %s", *outputFileArg)
-		err := saveToFile(allSources, *outputFileArg)
-		if err != nil {
+		if err := saveToFile(allSources, *outputFileArg); err != nil {
 			output.ErrorF("[!] Couldn't save to output file %s", err, *outputFileArg)
 		}
 	}
@@ -258,11 +254,9 @@ func readLines(r io.Reader) ([]string, error) {
 
 func resolveUrls(s []string) ([]string, error) {
 	for i := len(s) - 1; i >= 0; i-- {
-		resp, err := http.Get(s[i])
-		if err != nil {
+		if resp, err := http.Get(s[i]); err != nil {
 			return nil, err
-		}
-		if resp.StatusCode != 200 && resp.StatusCode != 304 {
+		} else if resp.StatusCode != 200 && resp.StatusCode != 304 {
 			s = append(s[:i], s[i+1:]...)
 		}
 	}
