@@ -16,55 +16,52 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-type logger interface {
-	Log(msg string)
-	Error(msg string, err error)
+const (
+	LOG_SILENT = iota
+	LOG_VERBOSE
+)
+
+type Logger struct {
+	logLevel int
 }
 
-type silent struct{}
-
-func (s silent) Log(msg string) {
-}
-
-func (s silent) Error(msg string, err error) {
-}
-
-type verbose struct {
-}
-
-func (v verbose) Log(msg string) {
-	fmt.Println(au.Cyan(msg))
-}
-
-func Log(l logger, msg string) {
-	l.Log(msg)
-}
-
-func (v verbose) Error(msg string, err error) {
-	fmt.Fprintln(os.Stderr, au.Red(msg))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, au.Red("[!] Error: "), au.Red(err))
+func (l *Logger) Log(msg string) {
+	if l.logLevel == LOG_VERBOSE {
+		fmt.Println(au.Cyan(msg))
 	}
 }
 
-func Error(l logger, msg string, err error) {
-	l.Error(msg, err)
+func (l *Logger) LogF(msg string, a ...interface{}) {
+	l.Log(fmt.Sprintf(msg, a...))
 }
 
-var output logger
+func (l *Logger) Error(msg string, err error) {
+	if l.logLevel == LOG_VERBOSE {
+		fmt.Fprintln(os.Stderr, au.Red(msg))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, au.Red("[!] Error: "), au.Red(err))
+		}
+	}
+}
+
+func (l *Logger) ErrorF(msg string, err error, a ...interface{}) {
+	l.Error(fmt.Sprintf(msg, a...), err)
+}
+
+var output *Logger
 var au aurora.Aurora
 
 func main() {
-	urlArg := flag.String("url", "", "The url to get the javascript sources from")
-	methodArg := flag.String("method", "GET", "The request method. e.g. GET or POST")
-	outputFileArg := flag.String("output", "", "Output file to save the results to")
+	urlArg := flag.StringP("url", "u", "", "The url to get the javascript sources from")
+	methodArg := flag.StringP("method", "X", "GET", "The request method. e.g. GET or POST")
+	outputFileArg := flag.StringP("output", "o", "", "Output file to save the results to")
 	inputFileArg := flag.String("input", "", "Input file with urls")
 	resolveArg := flag.Bool("resolve", false, "Output only existing files")
 	completeArg := flag.Bool("complete", false, "Complete the url. e.g. append the domain to the path")
-	verboseArg := flag.Bool("verbose", false, "Display info of what is going on")
-	noColorsArg := flag.Bool("nocolors", false, "Enable or disable colors")
+	verboseArg := flag.BoolP("verbose", "v", false, "Display info of what is going on")
+	noColorsArg := flag.BoolP("nocolors", "nc", false, "Enable or disable colors")
 	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
-	insecureArg := flag.Bool("insecure", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
+	insecureArg := flag.BoolP("insecure", "k", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
 	timeoutArg := flag.Int("timeout", 10, "Max timeout for the requests")
 	flag.Parse()
 
@@ -73,24 +70,18 @@ func main() {
 	var urls []string
 	var allSources []string
 
-	output = silent{}
-
+	output = &Logger{logLevel: LOG_SILENT}
 	if *verboseArg {
-		output = verbose{}
+		output.logLevel = LOG_VERBOSE
 	}
 
-	stat, err := os.Stdin.Stat()
-	if err != nil {
+	if stat, err := os.Stdin.Stat(); err != nil {
 		output.Error("[!] Couldnt read Stdin", err)
-	}
-
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			urls = append(urls, scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
+	} else if (stat.Mode() & os.ModeCharDevice) == 0 {
+		if lines, err := readLines(os.Stdin); err != nil {
 			output.Error("[!] Couldnt read Stdin", err)
+		} else {
+			urls = append(urls, lines...)
 		}
 		if len(urls) > 0 {
 			output.Log("[+] Received urls from Stdin")
@@ -105,16 +96,16 @@ func main() {
 		}
 		defer f.Close()
 
-		lines, err := readLines(f)
-		if err != nil {
+		if lines, err := readLines(f); err != nil {
 			output.Error("[!] Couldn't read from input file", err)
+		} else {
+			output.LogF("[+] Set url file to %s", *inputFileArg)
+			urls = append(urls, lines...)
 		}
-		output.Log("[+] Set url file to " + *inputFileArg)
-		urls = append(urls, lines...)
 	}
 
 	if *urlArg != "" {
-		output.Log(fmt.Sprintf("[+] Set url to %s", *urlArg))
+		output.LogF("[+] Set url to %s", *urlArg)
 		urls = append(urls, *urlArg)
 	}
 
@@ -129,39 +120,35 @@ func main() {
 	}
 
 	for _, e := range urls {
-		var sourcesBak []string
 		var completedSuccessfully = true
 		output.Log("[+] Getting sources from " + e)
 		sources, err := getScriptSrc(e, *methodArg, *HeaderArg, *insecureArg, *timeoutArg)
 		if err != nil {
-			output.Error(fmt.Sprintf("[!] Couldn't get sources from %s", e), err)
+			output.ErrorF("[!] Couldn't get sources from %s", err, e)
+			continue
 		}
 
 		if *completeArg {
 			output.Log("[+] Completing URLs")
-			sourcesBak = sources
-			sources, err = completeUrls(sources, e)
-			if err != nil {
+			if completedSources, err := completeUrls(sources, e); err != nil {
 				output.Error("[!] Couldn't complete URLs", err)
-				sources = sourcesBak
 				completedSuccessfully = false
+			} else {
+				sources = completedSources
 			}
 		}
 
 		if *resolveArg && *completeArg {
 			if completedSuccessfully {
 				output.Log("[+] Resolving files")
-				sourcesBak = sources
-				sources, err = resolveUrls(sources)
-				if err != nil {
+				if resolvedSources, err := resolveUrls(sources); err != nil {
 					output.Error("[!] Couldn't resolve URLs", err)
-					sources = sourcesBak
+				} else {
+					sources = resolvedSources
 				}
 			} else {
 				output.Error("[!] Couldn't resolve URLs", nil)
 			}
-		} else if *resolveArg {
-			output.Error("[!] Resolve can only be used in combination with -complete", nil)
 		}
 
 		for _, i := range sources {
@@ -176,10 +163,9 @@ func main() {
 
 	// Save to file
 	if *outputFileArg != "" {
-		output.Log(fmt.Sprintf("[+] Saving output to %s", *outputFileArg))
-		err := saveToFile(allSources, *outputFileArg)
-		if err != nil {
-			output.Error(fmt.Sprintf("[!] Couldn't save to output file %s", *outputFileArg), err)
+		output.LogF("[+] Saving output to %s", *outputFileArg)
+		if err := saveToFile(allSources, *outputFileArg); err != nil {
+			output.ErrorF("[!] Couldn't save to output file %s", err, *outputFileArg)
 		}
 	}
 
@@ -209,7 +195,7 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 	for _, d := range headers {
 		values := strings.Split(d, ":")
 		if len(values) == 2 {
-			output.Log("[+] New Header: " + values[0] + ": " + values[1])
+			output.LogF("[+] New Header: %s: %s", values[0], values[1])
 			req.Header.Set(values[0], values[1])
 		}
 	}
@@ -219,7 +205,7 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: insecure},
 	}
 
-	var client = &http.Client{
+	client := &http.Client{
 		Timeout:   time.Duration(time.Duration(timeout) * time.Second),
 		Transport: tr,
 	}
@@ -230,7 +216,7 @@ func getScriptSrc(url string, method string, headers []string, insecure bool, ti
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		output.Error(fmt.Sprintf("[!] %s returned an %d instead of %d", url, res.StatusCode, http.StatusOK), nil)
+		output.ErrorF("[!] %s returned an %d instead of %d", nil, url, res.StatusCode, http.StatusOK)
 		return nil, nil
 	}
 
@@ -267,13 +253,12 @@ func readLines(r io.Reader) ([]string, error) {
 }
 
 func resolveUrls(s []string) ([]string, error) {
-	for i := len(s) - 1; i >= 0; i-- {
-		resp, err := http.Get(s[i])
-		if err != nil {
+	var resolved []string
+	for _, url := range s {
+		if resp, err := http.Get(url); err != nil {
 			return nil, err
-		}
-		if resp.StatusCode != 200 && resp.StatusCode != 304 {
-			s = append(s[:i], s[i+1:]...)
+		} else if resp.StatusCode == 200 || resp.StatusCode == 304 {
+			resolved = append(resolved, url)
 		}
 	}
 	return s, nil
