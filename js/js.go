@@ -88,3 +88,7 @@ func (s *Sourcer) GetScriptSrc(ur string) ([]string, error) {
 
 	return sources, nil
 }
+
+func (s *Sourcer) Client() *http.Client {
+	return s.client
+}

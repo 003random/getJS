@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/003random/getJS/js"
 	"github.com/003random/getJS/logger"
@@ -26,12 +29,12 @@ func main() {
 	HeaderArg := flag.StringArrayP("header", "H", nil, "Any HTTP headers(-H \"Authorization:Bearer token\")")
 	insecureArg := flag.Bool("insecure", false, "Check the SSL security checks. Use when the certificate is expired or invalid")
 	timeoutArg := flag.Int("timeout", 10, "Max timeout for the requests")
+	downloadDir := flag.String("ddir", "", "Download javascript files in this directory")
 	flag.Parse()
 
 	logger := logger.NewLogger(*verboseArg, !*noColorsArg)
 
 	var urls []string
-	var allSources []string
 
 	stat, err := os.Stdin.Stat()
 	if err != nil {
@@ -84,6 +87,8 @@ func main() {
 
 	sourcer := js.NewSourcer(logger, *methodArg, *HeaderArg, *insecureArg, *timeoutArg)
 
+	results := make(map[string][]string)
+
 	for _, e := range urls {
 		var sourcesBak []string
 		var completedSuccessfully = true
@@ -126,15 +131,36 @@ func main() {
 		}
 
 		if *outputFileArg != "" {
-			allSources = append(allSources, sources...)
+			results[e] = append(results[e], sources...)
 		}
 
+	}
+
+	if *downloadDir != "" {
+		client := sourcer.Client()
+
+		ch := make(chan string, 10)
+		var wg sync.WaitGroup
+		wg.Add(10)
+
+		for i := 0; i < 10; i++ {
+			go saveJSToFile(client, logger, *downloadDir, ch, &wg)
+		}
+
+		for ur, sources := range results {
+			for _, src := range sources {
+				ch <- ur + src
+			}
+		}
+		close(ch)
+
+		wg.Wait()
 	}
 
 	// Save to file
 	if *outputFileArg != "" {
 		logger.LogF("Saving output to %s", *outputFileArg)
-		err := saveToFile(allSources, *outputFileArg)
+		err := saveToFile(results, *outputFileArg)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Couldn't save to output file %s", *outputFileArg), err)
 		}
@@ -142,7 +168,47 @@ func main() {
 
 }
 
-func saveToFile(sources []string, path string) error {
+func saveJSToFile(client *http.Client, logger *logger.Logger, ddirName string, urls chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for ur := range urls {
+		resp, err := client.Get(ur)
+		if err != nil {
+			logger.Error("Error fetching the file", err)
+			continue
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logger.Error("Error reading response body", err)
+			resp.Body.Close()
+			continue
+		}
+
+		ddir, fname := getOutFilenameDir(ur)
+		outputDir := filepath.Join(ddirName, ddir)
+		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+			logger.Error("Error creating directory", nil)
+		}
+
+		if err := ioutil.WriteFile(filepath.Join(outputDir, fname), body, os.ModePerm); err != nil {
+			logger.Error("Error saving file", err)
+			continue
+		}
+		msg := fmt.Sprintf("File %s saved successfully", filepath.Join(outputDir, fname))
+		logger.Log(msg)
+	}
+}
+
+func getOutFilenameDir(ur string) (string, string) {
+	withoutHTTPS := strings.Replace(ur, "https://", "", -1)
+	withoutHTTPS = strings.Replace(withoutHTTPS, "http://", "", -1)
+
+	paths := strings.Split(withoutHTTPS, "/")
+
+	return filepath.Join(paths[0 : len(paths)-1]...), paths[len(paths)-1]
+}
+
+func saveToFile(results map[string][]string, path string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -150,8 +216,11 @@ func saveToFile(sources []string, path string) error {
 	defer file.Close()
 
 	w := bufio.NewWriter(file)
-	for _, line := range sources {
-		fmt.Fprintln(w, line)
+	for ur, sources := range results {
+		fmt.Fprintln(w, fmt.Sprintf("[*] %s:", ur))
+		for _, src := range sources {
+			fmt.Fprintln(w, fmt.Sprintf("\t%s", src))
+		}
 	}
 	return w.Flush()
 }
