@@ -5,7 +5,7 @@ RUN go mod init getjs && \
     go get . && \
     CGO_ENABLED=0 GOOS=linux go build -o getjs
 
-FROM alpine
+FROM scratch
 WORKDIR /app
 COPY --from=build /etc/ssl/certs/ca-certificates.crt \    
                   /etc/ssl/certs/ca-certificates.crt
