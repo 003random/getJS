@@ -31,7 +31,7 @@
 
 To install `getJS`, use the following command:
 
-`go get github.com/003random/getJS`
+`go install github.com/003random/getJS/v2@latest`
 
 ## CLI Usage
 
