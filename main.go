@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/003random/getJS/runner"
+	"github.com/003random/getJS/v2/runner"
 )
 
 func main() {

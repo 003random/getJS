@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/003random/getJS/extractor"
+	"github.com/003random/getJS/v2/extractor"
 )
 
 // ExtractionPoints defines the default HTML tags and their attributes from which JavaScript sources are extracted.
