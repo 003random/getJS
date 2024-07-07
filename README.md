@@ -1,5 +1,4 @@
 <h2 align="center">JavaScript Extraction CLI & Package</h2>
-<hr>
 <p align="center">
   <a href="https://pkg.go.dev/github.com/003random/getJS">
     <img src="https://pkg.go.dev/badge/github.com/003random/getJS">
