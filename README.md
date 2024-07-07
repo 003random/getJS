@@ -1,4 +1,5 @@
-<h2 align="center">JavaScript Extraction CLI & Package</h2>
+
+<h1 align="center">JavaScript Extraction CLI & Package</h1>
 <p align="center">
   <a href="https://pkg.go.dev/github.com/003random/getJS">
     <img src="https://pkg.go.dev/badge/github.com/003random/getJS">
@@ -12,8 +13,7 @@
 </p>
 
 
-[getJS](https://github.com/003random/getJS) is a versatile tool designed to extract JavaScript sources from web pages. It offers both a command-line interface (CLI) for straightforward URL processing and a package interface for more customized integrations.
-
+This is a powerful tool for extracting JavaScript sources from URLs and weg pages / HTTP responses. It offers a command-line interface (CLI) for straightforward URL processing and a package interface for custom integrations, making it ideal for pentesters, bug bounty hunters, and developers needing to extract JS sources efficiently.
 ## Table of Contents
 
 - [Installation](#installation)
