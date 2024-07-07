@@ -1,109 +1,140 @@
-# GetJS
-[![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/003random/getJS/issues)
+<h2 align="center">JavaScript Extraction CLI & Package</h2>
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/003random/getJS">
+    <img src="https://pkg.go.dev/badge/github.com/003random/getJS">
+  </a>
+  <a href="https://github.com/003random/getJS/releases">
+    <img src="https://img.shields.io/github/release/003random/getJS.svg">
+  </a>
+    <a href="https://github.com/003random/getJS/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+  </a>
+</p>
 
-getJS is a tool to extract all the javascript files from a set of given urls.  
 
-The urls can also be piped to getJS, or you can specify a singel url with the -url argument. getJS offers a range of options, 
+[getJS](https://github.com/003random/getJS) is a versatile tool designed to extract JavaScript sources from web pages. It offers both a command-line interface (CLI) for straightforward URL processing and a package interface for more customized integrations.
 
-varying from completing the urls, to resolving the files.
+## Table of Contents
 
-## Prerequisites
+- [Installation](#installation)
+- [CLI Usage](#cli-usage)
+  - [Options](#options)
+  - [Examples](#examples)
+- [Package Usage](#package-usage)
+  - [Importing the Extractor](#importing-the-extractor)
+  - [Example](#example)
+- [Version Information](#version-information)
+- [Contributing](#contributing)
+- [License](#license)
 
-Make sure you have [GO](https://golang.org/) installed on your system.  
+## Installation
 
-### Installing
+To install `getJS`, use the following command:
 
-getJS is written in GO. You can install it with `go get`:
+`go get github.com/003random/getJS`
 
+## CLI Usage
+
+### Options
+
+`getJS` provides several command-line options to customize its behavior:
+
+- `-url string`: The URL from which JavaScript sources should be extracted.
+- `-input string`: Optional URLs input files. Each URL should be on a new line in plain text format. Can be used multiple times.
+- `-output string`: Optional output file where results are written to. Can be used multiple times.
+- `-complete`: Complete/Autofill relative URLs by adding the current origin.
+- `-resolve`: Resolve the JavaScript files. Can only be used in combination with `--complete`.
+- `-threads int`: The number of processing threads to spawn (default: 2).
+- `-verbose`: Print verbose runtime information and errors.
+- `-method string`: The request method used to fetch remote contents (default: "GET").
+- `-header string`: Optional request headers to add to the requests. Can be used multiple times.
+- `-timeout duration`: The request timeout while fetching remote contents (default: 5s).
+
+### Examples
+
+#### Extracting JavaScript from a Single URL
+
+`getJS -url https://destroy.ai`
+
+or 
+
+`curl https://destroy.ai | getJS`
+
+#### Using Custom Request Options
+
+`getJS -url "http://example.com" -header "User-Agent: foo bar" -method POST --timeout=15s`
+
+#### Processing Multiple URLs from a File
+
+`getJS -input foo.txt -input bar.txt`
+
+#### Saving Results to an Output File
+
+`getJS -url "http://example.com" -output results.txt`
+
+## Package Usage
+
+### Importing the Extractor
+
+To use `getJS` as a package, you need to import the `extractor` package and utilize its functions directly.
+
+### Example
+
+```Go
+package main
+
+import (
+    "fmt"
+    "log"
+    "net/http"
+    "net/url"
+
+    "github.com/003random/getJS/extractor"
+)
+
+func main() {
+    baseURL, err := url.Parse("https://google.com")
+    if (err != nil) {
+        log.Fatalf("Error parsing base URL: %v", err)
+    }
+
+    resp, err := extractor.FetchResponse(baseURL.String(), "GET", http.Header{})
+    if (err != nil) {
+        log.Fatalf("Error fetching response: %v", err)
+    }
+    defer resp.Body.Close()
+
+    // Custom extraction points (optional).
+    extractionPoints := map[string][]string{
+        "script": {"src", "data-src"},
+        "a": {"href"},
+    }
+
+    sources, err := extractor.ExtractSources(resp.Body, extractionPoints)
+    if (err != nil) {
+        log.Fatalf("Error extracting sources: %v", err)
+    }
+
+    // Filtering and extending extracted sources.
+    filtered, err := extractor.Filter(sources, extractor.WithComplete(baseURL), extractor.WithResolve())
+    if (err != nil) {
+        log.Fatalf("Error filtering sources: %v", err)
+    }
+
+    for source := range filtered {
+        fmt.Println(source.String())
+    }
+}
 ```
-go install github.com/003random/getJS@latest
-```
 
-# Usage  
-Note: When you supply urls from different sources, e.g. with stdin and an input file, it will add all the urls together :)  
-Example: `echo "https://github.com" | getJS --url https://example.com --input domains.txt`  
-  
-To get all  options, do:  
-```bash
-getJS -h
-```
-  
+## Version Information
 
-| Flag | Description | Example |
-|------|-------------|---------|
-| --url   | The url to get the javascript sources from | getJS --url https://poc-server.com |
-| --method   | The request method. e.g. POST or GET. Default: "GET"| getJS --url https://poc-server.com --method POST |
-| --timeout   | The request timeout. Default: 10 (secs) | getJS --url https://poc-server.com --timeout 15 |
-| --insecure   | Skip SSL certificate verification. Use when the cert is expired or invalid | getJS --url https://poc-server.com --insecure |
-| --header   | Custom request header(s) | getJS --url https://poc-server.com --header "Authorization: Bearer token" |
-| --input   | Input file with urls            | getJS --input domains.txt |
-| --output   | The file where to save the output to        | getJS --output output.txt |
-| --verbose  | Display info of what is going on           | getJS --verbose |
-| --complete  | Complete the urls. e.g. /js/index.js -> htt<span></span>ps://example.<span></span>com/js/index.js  | getJS --complete |
-| --resolve   | Resolve the output and filter out the non existing files (Can only be used in combination with --complete)   | getJS --complete --resolve |
-| --nocolors   | Don't color the output   | getJS --nocolors |
-
-## Examples  
-  
- ![screenshot](https://poc-server.com/getJS/screenshot_.png)
-
-    
-getJS supports stdin data. To pipe urls to getJS, use the following:  
-
-```bash
-$ cat domains.txt | getJS
-```  
-  
-To save the js files, you can use:  
-```bash
-$ getJS --complete --url https://poc-server.com | xargs wget
-```
-  
-If you would like the output to be in JSON format, you can combine it with [@Tomnomnom's](https://github.com/tomnomnom) [toJSON](https://github.com/tomnomnom/hacks/tree/master/tojson):  
-```bash
-$ getJS --url https://poc-server.com | tojson
-```  
-  
-To feed urls from a file use:  
-```bash
-$ getJS --input domains.txt
-```  
-  
-To save the results to a file, and don't display anything, use:  
-```bash
-$ getJS --url https://poc-server.com --output results.txt
-```  
-  
-If you want to have a list of full urls as output use:  
-```bash
-$ getJS --url domains.txt -complete
-```  
-  
-If you want to only show the existing js files, use:  
-```bash
-$ getJS --url domains.txt --complete --resolve
-```  
-
-## Built With
-
-* [GO](http://golang.org/) - GOlanguage
-* [Goquery](https://github.com/PuerkitoBio/goquery) - HTML parser with syntaxes like jquery, in GO
-
+This is the v2 version of `getJS`. The original version can be found under the tag [v1](https://github.com/003random/getJS/tree/v1).
 
 ## Contributing
 
-You are free to submit any issues and/or pull requests :)
+Contributions are welcome! Please open an issue or submit a pull request for any bugs, feature requests, or improvements.
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Acknowledgments
-
-* [@jimen0](https://github.com/jimen0) for helping getting me started with GO
-  
-    
----
-    
-*This is my first tool written in GO. I created it to learn the language more. (useful feeback is always welcome!)*
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/003random/getJS/blob/master/LICENSE) file for details.
