@@ -1,9 +1,3 @@
-<h1 align="center">
-  getJS
-  <br>
-</h1>
-<h4 align="center">JavaScript Extraction Tool</h4>
-<hr>
 <p align="center">
   <a href="https://pkg.go.dev/github.com/003random/getJS">
     <img src="https://pkg.go.dev/badge/github.com/003random/getJS">
