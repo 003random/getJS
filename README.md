@@ -6,6 +6,9 @@
   <a href="https://github.com/003random/getJS/releases">
     <img src="https://img.shields.io/github/release/003random/getJS.svg">
   </a>
+    <a href="https://github.com/003random/getJS/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+  </a>
 </p>
 
 
@@ -134,4 +137,4 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/003random/getJS/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/003random/getJS/blob/master/LICENSE) file for details.
