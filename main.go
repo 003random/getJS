@@ -5,20 +5,19 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
-
-	"log"
 	"time"
 
 	"github.com/003random/getJS/runner"
 )
 
 func main() {
-	options, err := setupFlags()
+	options, err := setup()
 	if err != nil {
-		log.Fatal(fmt.Errorf("parsing flags: %v", err))
+		log.Fatal(fmt.Errorf("parsing flags: %w", err))
 	}
 
 	if err := runner.New(options).Run(); err != nil {
@@ -26,14 +25,14 @@ func main() {
 	}
 }
 
-func setupFlags() (options *runner.Options, err error) {
+func setup() (options *runner.Options, err error) {
 	options = &runner.Options{}
 
 	flag.StringVar(&options.Request.Method, "method", "GET", "The request method that should be used to make fetch the remote contents.")
 	flag.DurationVar(&options.Request.Timeout, "timeout", 5*time.Second, "The request timeout used while fetching the remote contents.")
 	flag.BoolVar(&options.Complete, "complete", false, "Complete/Autofil relative URLs by adding the current origin.")
 	flag.BoolVar(&options.Resolve, "resolve", false, "Resolve the JavaScript files. Can only be used in combination with '--resolve'. Unresolvable hosts are not included in the results.")
-	flag.IntVar(&options.Threads, "threads", 2, "The amount of processing theads to spawn.")
+	flag.IntVar(&options.Threads, "threads", 2, "The amount of processing threads to spawn.")
 	flag.BoolVar(&options.Verbose, "verbose", false, "Print verbose runtime information and errors.")
 
 	var (
@@ -65,27 +64,46 @@ func setupFlags() (options *runner.Options, err error) {
 
 	stat, err := os.Stdin.Stat()
 	if err != nil {
-		log.Fatal(fmt.Errorf("reading stdin: %v", err))
+		log.Fatal(fmt.Errorf("error reading stdin: %v", err))
 	}
 
-	// Read URLs from stdin, if supported.
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		options.Inputs = append(options.Inputs, runner.Input{
-			Type: runner.InputURL,
-			Data: bufio.NewReader(os.Stdin),
-		})
+		// Read the first line of stdin to detect its format
+		reader := bufio.NewReader(os.Stdin)
+		firstLine, err := reader.ReadString('\n')
+		if err != nil && err != io.EOF {
+			log.Fatal(fmt.Errorf("error reading first line of stdin: %v", err))
+		}
+
+		if isURL(strings.TrimSpace(firstLine)) {
+			// Treat as URL input.
+			options.Inputs = append(options.Inputs, runner.Input{
+				Type: runner.InputURL,
+				Data: io.MultiReader(strings.NewReader(firstLine), reader),
+			})
+		} else {
+			// Treat as HTTP response body.
+			options.Inputs = append(options.Inputs, runner.Input{
+				Type: runner.InputResponse,
+				Data: io.MultiReader(strings.NewReader(firstLine), reader),
+			})
+		}
 	}
 
 	return
+}
+
+func isURL(str string) bool {
+	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
 
 func outputs(names []string) []io.Writer {
 	outputs := append([]io.Writer{}, os.Stdout)
 
 	for _, n := range names {
-		file, err := os.OpenFile(n, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		file, err := os.OpenFile(n, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
-			log.Fatal(fmt.Errorf("parsing output file flag: %v", err))
+			log.Fatal(fmt.Errorf("error parsing output file flag: %v", err))
 		}
 
 		outputs = append(outputs, file)
@@ -100,7 +118,7 @@ func inputs(names []string) []runner.Input {
 	for _, n := range names {
 		file, err := os.Open(n)
 		if err != nil {
-			log.Fatal(fmt.Errorf("reading from file %s: %v", n, err))
+			log.Fatal(fmt.Errorf("error reading from file %s: %v", n, err))
 		}
 
 		inputs = append(inputs, runner.Input{Type: runner.InputURL, Data: file})

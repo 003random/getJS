@@ -7,15 +7,19 @@ import (
 	"time"
 )
 
+// Input represents an input source for getJS. The input format is determined by the `Type` property.
 type Input struct {
-	Type inputType
+	Type InputType
 	Data io.Reader
 }
 
-type inputType int
+// InputType defines the type of input source for getJS.
+type InputType int
 
 const (
-	InputURL inputType = iota
+	// InputURL defines the input format to line separated, plain text, URLs.
+	InputURL InputType = iota
+	// InputResponse defines the input format to a HTTP response body.
 	InputResponse
 )
 
@@ -24,6 +28,7 @@ type runner struct {
 	Results chan url.URL
 }
 
+// Options represents the configuration options for the runner.
 type Options struct {
 	Request struct {
 		Method             string

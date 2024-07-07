@@ -11,15 +11,15 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/003random/getJS/extractor"
 )
 
-var (
-	ExtractionPoints = map[string][]string{
-		"script": {"src", "data-src"},
-	}
-)
+// ExtractionPoints defines the default HTML tags and their attributes from which JavaScript sources are extracted.
+var ExtractionPoints = map[string][]string{
+	"script": {"src", "data-src"},
+}
 
+// New creates a new runner with the provided options.
 func New(options *Options) *runner {
 	http.DefaultClient.Transport = &http.Transport{
 		TLSHandshakeTimeout: options.Request.Timeout,
@@ -35,6 +35,7 @@ func New(options *Options) *runner {
 	}
 }
 
+// Run starts processing the inputs and extracts JavaScript sources into the runner's Results channel.
 func (r *runner) Run() error {
 	if !r.Options.Verbose {
 		log.SetOutput(io.Discard)
@@ -79,12 +80,16 @@ func (r *runner) listen() {
 	}
 }
 
+// ProcessURLs will fetch the HTTP response for all URLs in the provided reader
+// and stream the extracted sources to the runner's Results channel.
 func (r *runner) ProcessURLs(data io.Reader) {
-	next := Read(data)
+	var (
+		next = Read(data)
+		wg   = sync.WaitGroup{}
 
-	wg := sync.WaitGroup{}
+		throttle = make(chan struct{}, r.Options.Threads)
+	)
 
-	throttle := make(chan struct{}, r.Options.Threads)
 	for i := 0; i < r.Options.Threads; i++ {
 		throttle <- struct{}{}
 	}
@@ -95,124 +100,45 @@ func (r *runner) ProcessURLs(data io.Reader) {
 			break
 		}
 		if err != nil {
-			log.Println(fmt.Errorf("[error] parsing url %s: %v", u.String(), err))
+			log.Println(fmt.Errorf("[error] parsing url %v: %w", u, err))
 			continue
 		}
 
 		wg.Add(1)
-		go func() {
+		go func(u *url.URL) {
 			defer func() {
 				throttle <- struct{}{}
 				wg.Done()
 			}()
 
-			req, err := http.NewRequest(r.Options.Request.Method, u.String(), nil)
+			resp, err := extractor.FetchResponse(u.String(), r.Options.Request.Method, r.Options.Request.Headers)
 			if err != nil {
-				log.Println(fmt.Errorf("[error] creating request for url %s: %v", u.String(), err))
-				return
-			}
-
-			req.Header = r.Options.Request.Headers
-
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				log.Println(fmt.Errorf("[error] requesting url %s: %v", u.String(), err))
+				log.Println(fmt.Errorf("[error] fetching response for url %s: %w", u.String(), err))
 				return
 			}
 			defer resp.Body.Close()
 
-			urls, err := Sources(resp.Body)
+			sources, err := extractor.ExtractSources(resp.Body)
 			if err != nil {
-				log.Println(fmt.Errorf("[error] extracting sources for url %s: %v", u.String(), err))
+				log.Println(fmt.Errorf("[error] extracting sources from response for url %s: %w", u.String(), err))
 				return
 			}
 
-			for source := range urls {
-				if r.Options.Complete {
-					source = Complete(source, u)
-				}
+			filtered, err := extractor.Filter(sources, r.filters(u)...)
+			if err != nil {
+				log.Println(fmt.Errorf("[error] filtering sources for url %s: %w", u.String(), err))
+				return
+			}
 
-				if r.Options.Resolve && r.Options.Complete {
-					if !Resolves(source) {
-						log.Printf("[error] source %s did not resolve\n", source.String())
-						continue
-					}
-				}
-
+			for source := range filtered {
 				r.Results <- source
 			}
-		}()
+		}(u)
 
 		<-throttle
 	}
 
 	wg.Wait()
-}
-
-func (r *runner) ProcessResponse(data io.Reader) {
-	urls, err := Sources(data)
-	if err != nil {
-		log.Println(fmt.Errorf("[error] extracting sources from response file: %v", err))
-	}
-
-	for sources := range urls {
-		r.Results <- sources
-	}
-}
-
-// Sources ...
-func Sources(input io.Reader) (<-chan url.URL, error) {
-	doc, err := goquery.NewDocumentFromReader(input)
-	if err != nil {
-		return nil, err
-	}
-
-	urls := make(chan url.URL)
-
-	go func() {
-		for tag, attributes := range ExtractionPoints {
-			doc.Find(tag).Each(func(i int, s *goquery.Selection) {
-				for _, a := range attributes {
-					if value, exists := s.Attr(a); exists {
-						u, err := url.Parse(value)
-						if err != nil {
-							log.Println(fmt.Errorf("invalid attribute value %s can not be parsed to an url: %v", value, err))
-						}
-
-						urls <- *u
-					}
-				}
-			})
-		}
-
-		close(urls)
-	}()
-
-	return urls, nil
-}
-
-// Complete ...
-func Complete(source url.URL, base *url.URL) url.URL {
-	if source.IsAbs() {
-		return source
-	}
-
-	return *base.ResolveReference(&source)
-}
-
-// Resolve ...
-func Resolves(source url.URL) bool {
-	resp, err := http.Get(source.String())
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	_, err = io.Copy(io.Discard, resp.Body)
-
-	// A source is valid if there is no error reading the response body, and
-	// the status code is within the 200 range.
-	return err == nil && (resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices)
 }
 
 // Read is a wrapper around the bufio.Scanner Text() method.
@@ -227,4 +153,33 @@ func Read(input io.Reader) func() (*url.URL, error) {
 
 		return url.Parse(scanner.Text())
 	}
+}
+
+func (r *runner) ProcessResponse(data io.Reader) {
+	sources, err := extractor.ExtractSources(data)
+	if err != nil {
+		log.Println(fmt.Errorf("[error] extracting sources from response file: %w", err))
+	}
+
+	filtered, err := extractor.Filter(sources, r.filters(nil)...)
+	if err != nil {
+		log.Println(fmt.Errorf("[error] filtering sources from response file: %w", err))
+		return
+	}
+
+	for source := range filtered {
+		r.Results <- source
+	}
+}
+
+func (r *runner) filters(base *url.URL) (options []func([]url.URL) []url.URL) {
+	if r.Options.Complete && base != nil {
+		options = append(options, extractor.WithComplete(base))
+	}
+
+	if r.Options.Resolve {
+		options = append(options, extractor.WithResolve())
+	}
+
+	return
 }
