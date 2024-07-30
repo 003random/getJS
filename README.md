@@ -13,7 +13,7 @@
 </p>
 
 
-This is a powerful tool for extracting JavaScript sources from URLs and weg pages / HTTP responses. It offers a command-line interface (CLI) for straightforward URL processing and a package interface for custom integrations, making it ideal for pentesters, bug bounty hunters, and developers needing to extract JS sources efficiently.
+This is a powerful tool for extracting JavaScript sources from URLs and web pages / HTTP responses. It offers a command-line interface (CLI) for straightforward URL processing and a package interface for custom integrations, making it ideal for pentesters, bug bounty hunters, and developers needing to extract JS sources efficiently.
 ## Table of Contents
 
 - [Installation](#installation)
