@@ -30,6 +30,7 @@ func setup() (options *runner.Options, err error) {
 
 	flag.StringVar(&options.Request.Method, "method", "GET", "The request method that should be used to make fetch the remote contents.")
 	flag.DurationVar(&options.Request.Timeout, "timeout", 5*time.Second, "The request timeout used while fetching the remote contents.")
+	flag.BoolVar(&options.Request.InsecureSkipVerify, "insecure", true, "Skip certification verification.")
 	flag.BoolVar(&options.Complete, "complete", false, "Complete/Autofil relative URLs by adding the current origin.")
 	flag.BoolVar(&options.Resolve, "resolve", false, "Resolve the JavaScript files. Can only be used in combination with '--resolve'. Unresolvable hosts are not included in the results.")
 	flag.IntVar(&options.Threads, "threads", 2, "The amount of processing threads to spawn.")
