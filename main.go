@@ -33,6 +33,8 @@ func setup() (options *runner.Options, err error) {
 	flag.BoolVar(&options.Request.InsecureSkipVerify, "insecure", true, "Skip certification verification.")
 	flag.BoolVar(&options.Complete, "complete", false, "Complete/Autofil relative URLs by adding the current origin.")
 	flag.BoolVar(&options.Resolve, "resolve", false, "Resolve the JavaScript files. Can only be used in combination with '--resolve'. Unresolvable hosts are not included in the results.")
+	flag.BoolVar(&options.Unique, "unique", false, "Filter out duplicate URLs.")
+	flag.BoolVar(&options.JSON, "json", false, "Output results in JSON format.")
 	flag.IntVar(&options.Threads, "threads", 2, "The amount of processing threads to spawn.")
 	flag.BoolVar(&options.Verbose, "verbose", false, "Print verbose runtime information and errors.")
 
