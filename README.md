@@ -17,6 +17,7 @@ This is a powerful tool for extracting JavaScript sources from URLs, web pages, 
 ## Table of Contents
 
 - [Installation](#installation)
+- [Docker](#docker)
 - [CLI Usage](#cli-usage)
   - [Options](#options)
   - [Examples](#examples)
@@ -32,6 +33,40 @@ This is a powerful tool for extracting JavaScript sources from URLs, web pages, 
 To install `getJS`, use the following command:
 
 `go install github.com/003random/getJS/v2@latest`
+
+## Docker
+
+Build the image from the repository root:
+
+```sh
+docker build -t getjs:local .
+```
+
+Run getJS against a URL:
+
+```sh
+docker run --rm getjs:local -url https://example.com
+```
+
+When piping a URL or HTTP response into the container, keep stdin open with
+`--interactive`:
+
+```sh
+curl https://example.com | docker run --rm --interactive getjs:local
+```
+
+Mount URL-list files read-only and refer to them by their container path:
+
+```sh
+docker run --rm --volume "${PWD}:/data:ro" getjs:local -input /data/urls.txt
+```
+
+Results are written to stdout by default, so they can be saved on the host
+without granting the container write access:
+
+```sh
+docker run --rm getjs:local -url https://example.com > results.txt
+```
 
 ## CLI Usage
 

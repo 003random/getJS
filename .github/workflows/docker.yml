@@ -1,0 +1,40 @@
+name: Docker
+
+on:
+  pull_request:
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+      - "Dockerfile"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+  push:
+    branches:
+      - master
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+      - "Dockerfile"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build --tag getjs:test .
+
+      - name: Smoke test stdin extraction
+        run: |
+          printf '%s\n' '<script src="/app.js"></script>' \
+            | docker run --rm --interactive getjs:test \
+            | grep --fixed-strings --line-regexp '/app.js'
