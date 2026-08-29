@@ -3,12 +3,14 @@ package runner
 import (
 	"bufio"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/003random/getJS/v2/extractor"
@@ -64,11 +66,20 @@ func (r *runner) Run() error {
 }
 
 func (r *runner) listen() {
-	for s := range r.Results {
-		for _, output := range r.Options.Outputs {
-			_, err := output.Write([]byte(fmt.Sprintf("%s\n", s.String())))
-			if err != nil {
-				log.Println(fmt.Errorf("[error] writing result %s to output: %v", s.String(), err))
+	if r.Options.JSON {
+		encoder := json.NewEncoder(os.Stdout)
+		for s := range r.Results {
+			if err := encoder.Encode(map[string]string{"url": s.String()}); err != nil {
+				log.Println(fmt.Errorf("[error] encoding result %s to json: %v", s.String(), err))
+			}
+		}
+	} else {
+		for s := range r.Results {
+			for _, output := range r.Options.Outputs {
+				_, err := output.Write([]byte(fmt.Sprintf("%s\n", s.String())))
+				if err != nil {
+					log.Println(fmt.Errorf("[error] writing result %s to output: %v", s.String(), err))
+				}
 			}
 		}
 	}
@@ -179,6 +190,10 @@ func (r *runner) filters(base *url.URL) (options []func([]url.URL) []url.URL) {
 
 	if r.Options.Resolve {
 		options = append(options, extractor.WithResolve())
+	}
+
+	if r.Options.Unique {
+		options = append(options, extractor.WithUnique())
 	}
 
 	return

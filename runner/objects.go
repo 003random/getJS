@@ -42,6 +42,8 @@ type Options struct {
 
 	Complete bool
 	Resolve  bool
+	Unique   bool
+	JSON     bool
 
 	Threads int
 

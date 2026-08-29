@@ -131,3 +131,21 @@ func resolve(source url.URL) bool {
 	_, err = io.Copy(io.Discard, resp.Body)
 	return err == nil && (resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices)
 }
+
+// WithUnique is an option to filter duplicate URLs.
+func WithUnique() func([]url.URL) []url.URL {
+	return func(urls []url.URL) []url.URL {
+		var (
+			result []url.URL
+			seen   = make(map[string]struct{})
+		)
+
+		for _, u := range urls {
+			if _, ok := seen[u.String()]; !ok {
+				seen[u.String()] = struct{}{}
+				result = append(result, u)
+			}
+		}
+		return result
+	}
+}
